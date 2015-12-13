@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO;
 
 namespace ClutteredMarkov
 {
@@ -42,6 +45,52 @@ namespace ClutteredMarkov
             Words.Add(i, word);
             return i;
         }
+
+        private static object ByteArrayToObject(byte[] readArray)
+        {
+            using (var memStream = new MemoryStream())
+            {
+                BinaryFormatter binForm = new BinaryFormatter();
+                memStream.Write(readArray, 0, readArray.Length);
+                memStream.Seek(0, SeekOrigin.Begin);
+                Object obj = binForm.Deserialize(memStream);
+                return obj;
+            }
+        }
+
+        private static byte[] ObjectToByteArray(Object obj)
+        {
+            BinaryFormatter bin = new BinaryFormatter();
+            using (MemoryStream ms = new MemoryStream())
+            {
+                bin.Serialize(ms, obj);
+                return ms.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Saves the Markov chain information to the binary files words.cmc and nextwords.cmc
+        /// </summary>
+        public static void Save()
+        {
+            byte[] words = ObjectToByteArray(Words);
+            byte[] nextWords = ObjectToByteArray(NextWords);
+
+            File.WriteAllBytes("words.cmc", words);
+            File.WriteAllBytes("nextwords.cmc", nextWords);
+        }
+
+        /// <summary>
+        /// Loads the binary information of the Markov chain from the words.cmc and nextwords.cmc files
+        /// </summary>
+        public static void Load()
+        {
+            object words = ByteArrayToObject(File.ReadAllBytes("words.cmc"));
+            Words = (Dictionary<int, string>)words;
+            object nextWords = ByteArrayToObject(File.ReadAllBytes("nextwords.cmc"));
+            NextWords = (Dictionary<int, List<string>>)nextWords;
+        }
+
         /// <summary>
         /// Feeds a text line to the markov chain
         /// </summary>
