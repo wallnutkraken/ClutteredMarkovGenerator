@@ -4,21 +4,25 @@ namespace ClutteredMarkov
 {
     public static class MarkovGenerator
     {
+        private static Markov PassedChain;
         /// <summary>
         /// Creates a Markov Chain sentence based on the text that was fed
         /// </summary>
-        public static string Create()
+        public static string Create(Markov chain)
         {
             int chainLength = RandomGenerator.GetRandomNumber(100, 200);
-            return Create(chainLength);
+            PassedChain = chain;
+            string genChain = Create(chainLength);
+            PassedChain = null;
+            return genChain;
         }
 
         private static string GetNextWord(int wordKey)
         {
             try
             {
-                int selection = RandomGenerator.GetRandomNumber(0, Markov.NextWords[wordKey].Count - 1);
-                return Markov.NextWords[wordKey][selection];
+                int selection = RandomGenerator.GetRandomNumber(0, PassedChain.NextWords[wordKey].Count - 1);
+                return PassedChain.NextWords[wordKey][selection];
             }
             catch (Exception)
             {
@@ -31,11 +35,11 @@ namespace ClutteredMarkov
         /// <param name="chainLength">The amount of characters the chain should contain at the maximum</param>
         public static string Create(int chainLength)
         {
-            if (Markov.Words.Count == 0)
+            if (PassedChain.Words.Count == 0)
             {
                 return "";
             }
-            int beginning = RandomGenerator.GetRandomNumber(0, Markov.Words.Count - 1);
+            int beginning = RandomGenerator.GetRandomNumber(0, PassedChain.Words.Count - 1);
             string markovSentence = "";
             string nextWord = "";
 
@@ -43,14 +47,14 @@ namespace ClutteredMarkov
             {
                 if (markovSentence == "")
                 {
-                    markovSentence = Markov.Words[beginning] + " ";
+                    markovSentence = PassedChain.Words[beginning] + " ";
                     nextWord = GetNextWord(beginning);
                 }
                 else
                 {
                     try
                     {
-                        int currentNextWordKey = Markov.FindKey(nextWord);
+                        int currentNextWordKey = PassedChain.FindKey(nextWord);
                         nextWord = GetNextWord(currentNextWordKey);
                     }
                     catch (Exception)

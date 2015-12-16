@@ -1,18 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
 
 namespace ClutteredMarkov
 {
-    public static class Markov
+    public class Markov
     {
-        internal static Dictionary<int, string> Words = new Dictionary<int, string>();
-        internal static Dictionary<int, List<string>> NextWords = new Dictionary<int, List<string>>();
+        internal Dictionary<int, string> Words = new Dictionary<int, string>();
+        internal Dictionary<int, List<string>> NextWords = new Dictionary<int, List<string>>();
 
-        internal static int FindKey(string word)
+        internal int FindKey(string word)
         {
             if (Words.ContainsValue(word))
             {
@@ -26,7 +25,7 @@ namespace ClutteredMarkov
         /// <summary>
         /// Adds a new word to the dictionary and returns it's key
         /// </summary>
-        private static int AddNewWord(string word)
+        private int AddNewWord(string word)
         {
             if (Words.ContainsValue(word))
             {
@@ -68,22 +67,8 @@ namespace ClutteredMarkov
             }
         }
 
-        /// <summary>
-        /// Saves the Markov chain information to the binary files words.cmc and nextwords.cmc
-        /// </summary>
-        public static void Save()
-        {
-            byte[] words = ObjectToByteArray(Words);
-            byte[] nextWords = ObjectToByteArray(NextWords);
-
-            File.WriteAllBytes("words.cmc", words);
-            File.WriteAllBytes("nextwords.cmc", nextWords);
-        }
-
-        /// <summary>
-        /// Loads the binary information of the Markov chain from the words.cmc and nextwords.cmc files
-        /// </summary>
-        public static void Load()
+        [Obsolete("Please only use this to load old files into memory. Save them using SaveChainState from now on.")]
+        public void Load()
         {
             object words = ByteArrayToObject(File.ReadAllBytes("words.cmc"));
             Words = (Dictionary<int, string>)words;
@@ -92,9 +77,32 @@ namespace ClutteredMarkov
         }
 
         /// <summary>
+        /// Saves the Markov chain information to the binary files words.cmc and nextwords.cmc
+        /// </summary>
+        public void SaveChainState(string name)
+        {
+            byte[] words = ObjectToByteArray(Words);
+            byte[] nextWords = ObjectToByteArray(NextWords);
+
+            File.WriteAllBytes(name + "_words.cmc", words);
+            File.WriteAllBytes(name + "_nextwords.cmc", nextWords);
+        }
+
+        /// <summary>
+        /// Loads the binary information of the Markov chain from the words.cmc and nextwords.cmc files
+        /// </summary>
+        public void LoadChainState(string name)
+        {
+            object words = ByteArrayToObject(File.ReadAllBytes(name + "_words.cmc"));
+            Words = (Dictionary<int, string>)words;
+            object nextWords = ByteArrayToObject(File.ReadAllBytes(name + "_nextwords.cmc"));
+            NextWords = (Dictionary<int, List<string>>)nextWords;
+        }
+
+        /// <summary>
         /// Feeds a text line to the markov chain
         /// </summary>
-        public static void Feed(string line)
+        public void Feed(string line)
         {
             line = line.Replace('\n', ' ');
             /* Removes spaces that occur more than once */
