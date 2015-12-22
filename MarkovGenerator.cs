@@ -11,10 +11,7 @@ namespace ClutteredMarkov
         public static string Create(Markov chain)
         {
             int chainLength = RandomGenerator.GetRandomNumber(100, 200);
-            PassedChain = chain;
-            string genChain = Create(chainLength);
-            PassedChain = null;
-            return genChain;
+            return Create(chainLength, chain);
         }
 
         private static string GetNextWord(int wordKey)
@@ -33,8 +30,9 @@ namespace ClutteredMarkov
         /// Creates a Markov Chain sentence of a specified length based on the text that was fed
         /// </summary>
         /// <param name="chainLength">The amount of characters the chain should contain at the maximum</param>
-        public static string Create(int chainLength)
+        public static string Create(int chainLength, Markov chain)
         {
+            PassedChain = chain;
             if (PassedChain.Words.Count == 0)
             {
                 return "";
@@ -83,6 +81,7 @@ namespace ClutteredMarkov
                 }
 
             } while ((markovSentence + nextWord).Length <= chainLength);
+            PassedChain = null;
             return "";
         }
     }
