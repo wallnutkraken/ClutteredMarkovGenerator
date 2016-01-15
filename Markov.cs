@@ -8,13 +8,13 @@ using System.Xml.Serialization;
 
 namespace ClutteredMarkov
 {
+
     public class Markov
     {
         //internal Dictionary<int, string> Words = new Dictionary<int, string>();
         //internal Dictionary<int, List<string>> NextWords = new Dictionary<int, List<string>>();
 
         internal Dictionary<string, List<string>> ChainState { get; set; } = new Dictionary<string, List<string>>();
-
 
         /// <summary>
         /// Adds a new word to the dictionary
@@ -59,10 +59,30 @@ namespace ClutteredMarkov
         /// </summary>
         public void SaveChainState(string name)
         {
-            byte[] words = ObjectToByteArray(ChainState);
+            SaveChainState(name, false);
+        }
 
-
-            File.WriteAllBytes(name + ".bin", words);
+        /// <summary>
+        /// Saves the Markov chain information to the binary files words.cmc and nextwords.cmc
+        /// </summary>
+        /// <param name="ignoreFailsafe">If true, ignores failsafe for writing empty object</param>
+        public void SaveChainState(string name, bool ignoreFailsafe)
+        {
+            byte[] state = ObjectToByteArray(ChainState);
+            if (File.Exists(name + ".bin") && ignoreFailsafe == false)
+            {
+                FileInfo info = new FileInfo(name + ".bin");
+                if (info.Length <= state.Length)
+                {
+                    File.WriteAllBytes(name + ".bin", state);
+                    return;
+                }
+                else
+                {
+                    return;
+                }
+            }
+            File.WriteAllBytes(name + ".bin", state);
         }
 
         /// <summary>
