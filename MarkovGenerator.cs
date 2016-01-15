@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ClutteredMarkov
 {
@@ -14,12 +16,22 @@ namespace ClutteredMarkov
             return Create(chainLength, chain);
         }
 
-        private static string GetNextWord(int wordKey)
+        private static IEnumerable<TValue> RandomValues<TKey, TValue>(IDictionary<TKey, TValue> dict)
+        {
+            List<TValue> values = Enumerable.ToList(dict.Values);
+            int size = dict.Count;
+            while (true)
+            {
+                yield return values[RandomGenerator.GetRandomNumber(0, size)];
+            }
+        }
+
+        private static string GetNextWord(string word)
         {
             try
             {
-                int selection = RandomGenerator.GetRandomNumber(0, PassedChain.NextWords[wordKey].Count - 1);
-                return PassedChain.NextWords[wordKey][selection];
+                int selection = RandomGenerator.GetRandomNumber(0, PassedChain.ChainState[word].Count - 1);
+                return PassedChain.ChainState[word][selection];
             }
             catch (Exception)
             {
@@ -33,11 +45,11 @@ namespace ClutteredMarkov
         public static string Create(int chainLength, Markov chain)
         {
             PassedChain = chain;
-            if (PassedChain.Words.Count == 0)
+            if (PassedChain.ChainState.Count == 0)
             {
                 return "";
             }
-            int beginning = RandomGenerator.GetRandomNumber(0, PassedChain.Words.Count - 1);
+            int beginning = RandomGenerator.GetRandomNumber(0, PassedChain.ChainState.Count - 1);
             string markovSentence = "";
             string nextWord = "";
 
@@ -45,15 +57,20 @@ namespace ClutteredMarkov
             {
                 if (markovSentence == "")
                 {
-                    markovSentence = PassedChain.Words[beginning] + " ";
-                    nextWord = GetNextWord(beginning);
+                    string chainBit = "";
+                    foreach (var value in RandomValues(PassedChain.ChainState).Take(1))
+                    {
+                        chainBit = PassedChain.ChainState.FirstOrDefault(x => x.Value == value).Key;
+                    }
+
+                    markovSentence = chainBit + " ";
+                    nextWord = GetNextWord(chainBit);
                 }
                 else
                 {
                     try
                     {
-                        int currentNextWordKey = PassedChain.FindKey(nextWord);
-                        nextWord = GetNextWord(currentNextWordKey);
+                        nextWord = GetNextWord(nextWord);
                     }
                     catch (Exception)
                     {

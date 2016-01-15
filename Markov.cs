@@ -3,46 +3,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.IO;
+using System.Xml.Linq;
+using System.Xml.Serialization;
 
 namespace ClutteredMarkov
 {
     public class Markov
     {
-        internal Dictionary<int, string> Words = new Dictionary<int, string>();
-        internal Dictionary<int, List<string>> NextWords = new Dictionary<int, List<string>>();
+        //internal Dictionary<int, string> Words = new Dictionary<int, string>();
+        //internal Dictionary<int, List<string>> NextWords = new Dictionary<int, List<string>>();
 
-        internal int FindKey(string word)
+        internal Dictionary<string, List<string>> ChainState { get; set; } = new Dictionary<string, List<string>>();
+
+
+        /// <summary>
+        /// Adds a new word to the dictionary
+        /// </summary>
+        private void AddNewWord(string word)
         {
-            if (Words.ContainsValue(word))
+            if (ChainState.ContainsKey(word))
             {
-                return Words.FirstOrDefault(x => x.Value == word).Key;
+                return;
             }
             else
             {
-                return 0;
+                ChainState.Add(word, new List<string>());
+                return;
             }
-        }
-        /// <summary>
-        /// Adds a new word to the dictionary and returns it's key
-        /// </summary>
-        private int AddNewWord(string word)
-        {
-            if (Words.ContainsValue(word))
-            {
-                return Words.FirstOrDefault(x => x.Value == word).Key;
-            }
-            if (Words.Count == 0)
-            {
-                Words.Add(0, word);
-                return 0;
-            }
-            int i = 0;
-            while (Words.ContainsKey(i))
-            {
-                i++;
-            }
-            Words.Add(i, word);
-            return i;
         }
 
         private static object ByteArrayToObject(byte[] readArray)
@@ -67,25 +54,15 @@ namespace ClutteredMarkov
             }
         }
 
-        [Obsolete("Please only use this to load old files into memory. Save them using SaveChainState from now on.")]
-        public void Load()
-        {
-            object words = ByteArrayToObject(File.ReadAllBytes("words.cmc"));
-            Words = (Dictionary<int, string>)words;
-            object nextWords = ByteArrayToObject(File.ReadAllBytes("nextwords.cmc"));
-            NextWords = (Dictionary<int, List<string>>)nextWords;
-        }
-
         /// <summary>
         /// Saves the Markov chain information to the binary files words.cmc and nextwords.cmc
         /// </summary>
         public void SaveChainState(string name)
         {
-            byte[] words = ObjectToByteArray(Words);
-            byte[] nextWords = ObjectToByteArray(NextWords);
+            byte[] words = ObjectToByteArray(ChainState);
 
-            File.WriteAllBytes(name + "_words.cmc", words);
-            File.WriteAllBytes(name + "_nextwords.cmc", nextWords);
+
+            File.WriteAllBytes(name + ".bin", words);
         }
 
         /// <summary>
@@ -93,10 +70,8 @@ namespace ClutteredMarkov
         /// </summary>
         public void LoadChainState(string name)
         {
-            object words = ByteArrayToObject(File.ReadAllBytes(name + "_words.cmc"));
-            Words = (Dictionary<int, string>)words;
-            object nextWords = ByteArrayToObject(File.ReadAllBytes(name + "_nextwords.cmc"));
-            NextWords = (Dictionary<int, List<string>>)nextWords;
+            object words = ByteArrayToObject(File.ReadAllBytes(name + ".bin"));
+            ChainState = (Dictionary<string, List<string>>)words;
         }
 
         /// <summary>
@@ -105,6 +80,7 @@ namespace ClutteredMarkov
         public void Feed(string line)
         {
             line = line.Replace('\n', ' ');
+            line = line.Replace(".", "").Replace(",", "");
             /* Removes spaces that occur more than once */
             try
             {
@@ -123,48 +99,36 @@ namespace ClutteredMarkov
 
             for (int i = 0; i < words.Length; i++)
             {
-                if (Words.ContainsValue(words[i]))
+                if (ChainState.ContainsKey(words[i]))
                 {
-                    int key = Words.FirstOrDefault(x => x.Value == words[i]).Key;
+                    string key = words[i]; /* doing this because I'm too lazy to rewrite too much :P */
                     if (i == words.Length - 1)
                     {
                         /* If it's the last entry, add a null (which is interpreted as an END signal) */
-                        if (NextWords.ContainsKey(key) == false)
-                        {
-                            List<string> nextWords = new List<string>();
-                            nextWords.Add(null);
-                            NextWords.Add(key, nextWords);
-                        }
-                        NextWords[key].Add(null);
+                        ChainState[key].Add(null);
                     }
-                    else if (NextWords.ContainsKey(key) == false)
+                    else if (ChainState[key].Count == 0)
                     {
-                        List<string> nextWords = new List<string>();
-                        nextWords.Add(words[i + 1]);
-                        NextWords.Add(key, nextWords);
+                        ChainState[key].Add(words[i + 1]);
                     }
-                    else if (NextWords[key].Contains(words[i + 1]) == false)
+                    else if (ChainState[key].Contains(words[i + 1]) == false)
                     {
-                        NextWords[key].Add(words[i + 1]);
+                        ChainState[key].Add(words[i + 1]);
                     }
 
                 }
                 else
                 {
                     AddNewWord(words[i]);
-                    int key = Words.FirstOrDefault(x => x.Value == words[i]).Key;
-                    if (NextWords.ContainsKey(key) == false)
-                    {
-                        NextWords.Add(key, new List<string>());
-                    }
+                    string key = words[i];
                     if (i == words.Length - 1)
                     {
                         /* If it's the last entry, add a null (which is interpreted as an END signal) */
-                        NextWords[key].Add(null);
+                        ChainState[key].Add(null);
                     }
-                    else if (NextWords[key].Contains(words[i + 1]) == false)
+                    else if (ChainState[key].Contains(words[i + 1]) == false)
                     {
-                        NextWords[key].Add(words[i + 1]);
+                        ChainState[key].Add(words[i + 1]);
                     }
                 }
             }
