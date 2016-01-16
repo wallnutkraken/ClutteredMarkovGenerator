@@ -71,8 +71,7 @@ namespace ClutteredMarkov
             byte[] state = ObjectToByteArray(ChainState);
             if (File.Exists(name + ".bin") && ignoreFailsafe == false)
             {
-                FileInfo info = new FileInfo(name + ".bin");
-                if (info.Length <= state.Length)
+                if (new FileInfo(name + ".bin").Length <= state.Length)
                 {
                     File.WriteAllBytes(name + ".bin", state);
                     return;
